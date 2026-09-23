@@ -280,37 +280,9 @@
     <div class="section-head">
       <span class="eyebrow">The Actual Point of This Whole Thing</span>
       <h2>The Reading Strip</h2>
-      <p>Click a book to see everything filed under it so far. Two behind, one right now, two on deck.</p>
+      <p>Click a book to see everything filed under it so far. Fills in as it goes — more finished, less coming soon.</p>
     </div>
-    <div class="reading-strip">
-      <button type="button" class="strip-card" data-book="2">
-        <span class="strip-status reading">Currently Reading</span>
-        <img class="strip-cover" src="covers/02-cant-hurt-me.jpg" alt="Cover of Can't Hurt Me by David Goggins" loading="lazy">
-        <h3>Can't Hurt Me</h3>
-        <p class="strip-author">David Goggins</p>
-      </button>
-      <button type="button" class="strip-card" data-book="1">
-        <span class="strip-status finished">Finished</span>
-        <img class="strip-cover" src="covers/01-subtle-art.jpg" alt="Cover of The Subtle Art of Not Giving a F*ck by Mark Manson" loading="lazy">
-        <h3>The Subtle Art of Not Giving a F*ck</h3>
-        <p class="strip-author">Mark Manson</p>
-      </button>
-      <div class="strip-card empty">
-        <span class="strip-empty-label">Finished<br>— nothing yet —</span>
-      </div>
-      <button type="button" class="strip-card" data-book="3">
-        <span class="strip-status soon">Coming Soon</span>
-        <img class="strip-cover" src="covers/03-miracle-morning.jpg" alt="Cover of The Miracle Morning by Hal Elrod" loading="lazy">
-        <h3>The Miracle Morning</h3>
-        <p class="strip-author">Hal Elrod</p>
-      </button>
-      <button type="button" class="strip-card" data-book="4">
-        <span class="strip-status soon">Coming Soon</span>
-        <img class="strip-cover" src="covers/04-atomic-habits.jpg" alt="Cover of Atomic Habits by James Clear" loading="lazy">
-        <h3>Atomic Habits</h3>
-        <p class="strip-author">James Clear</p>
-      </button>
-    </div>
+    <div class="reading-strip" id="readingStrip"></div>
     <a class="post-more" href="books.html" style="margin-top:18px; display:inline-block;">See the full 20-book queue &rarr;</a>
   </section>
 
@@ -432,18 +404,81 @@
 <script>
   (function(){
     try{
-      var BOOK_TITLES = {
-        "1": "The Subtle Art of Not Giving a F*ck",
-        "2": "Can't Hurt Me",
-        "3": "The Miracle Morning",
-        "4": "Atomic Habits"
-      };
+      // Single source of truth: which book number is being actively read right now.
+      // Everything below (Finished vs. Coming Soon, and how many of each) is
+      // computed from this -- bump it as books get finished, nothing else to edit.
+      var CURRENT_BOOK = 2;
+
+      var BOOKS = [
+        {n:1, slug:"01-subtle-art", title:"The Subtle Art of Not Giving a F*ck", author:"Mark Manson"},
+        {n:2, slug:"02-cant-hurt-me", title:"Can't Hurt Me", author:"David Goggins"},
+        {n:3, slug:"03-miracle-morning", title:"The Miracle Morning", author:"Hal Elrod"},
+        {n:4, slug:"04-atomic-habits", title:"Atomic Habits", author:"James Clear"},
+        {n:5, slug:"05-rich-dad-poor-dad", title:"Rich Dad Poor Dad", author:"Robert Kiyosaki"},
+        {n:6, slug:"06-extreme-ownership", title:"Extreme Ownership", author:"Jocko Willink & Leif Babin"},
+        {n:7, slug:"07-4-hour-workweek", title:"The 4-Hour Workweek", author:"Tim Ferriss"},
+        {n:8, slug:"08-ikigai", title:"Ikigai", author:"Hector Garcia and Francesc Miralles"},
+        {n:9, slug:"09-deep-work", title:"Deep Work", author:"Cal Newport"},
+        {n:10, slug:"10-5am-club", title:"The 5AM Club", author:"Robin Sharma"},
+        {n:11, slug:"11-obstacle-is-the-way", title:"The Obstacle Is the Way", author:"Ryan Holiday"},
+        {n:12, slug:"12-compound-effect", title:"The Compound Effect", author:"Darren Hardy"},
+        {n:13, slug:"13-power-of-now", title:"The Power of Now", author:"Eckhart Tolle"},
+        {n:14, slug:"14-7-habits", title:"The 7 Habits of Highly Effective People", author:"Stephen Covey"},
+        {n:15, slug:"15-think-and-grow-rich", title:"Think and Grow Rich", author:"Napoleon Hill"},
+        {n:16, slug:"16-never-split-the-difference", title:"Never Split the Difference", author:"Chris Voss"},
+        {n:17, slug:"17-peak", title:"Peak", author:"Anders Ericsson"},
+        {n:18, slug:"18-millionaire-fastlane", title:"The Millionaire Fastlane", author:"MJ DeMarco"},
+        {n:19, slug:"19-outliers", title:"Outliers", author:"Malcolm Gladwell"},
+        {n:20, slug:"20-psychology-of-money", title:"The Psychology of Money", author:"Morgan Housel"}
+      ];
+      var BOOK_TITLES = {};
+      BOOKS.forEach(function(b){ BOOK_TITLES[String(b.n)] = b.title; });
+
+      function buildStrip(){
+        var current = BOOKS.filter(function(b){ return b.n === CURRENT_BOOK; })[0];
+        var finishedPool = BOOKS.filter(function(b){ return b.n < CURRENT_BOOK; }).sort(function(a,b){ return b.n - a.n; });
+        var soonPool = BOOKS.filter(function(b){ return b.n > CURRENT_BOOK; }).sort(function(a,b){ return a.n - b.n; });
+
+        // Up to 4 non-"currently reading" slots. Prefer at most 2 "Finished" so the
+        // strip still reads as "two behind, two ahead" once there's enough history --
+        // but never leave a slot blank while there's a real book to show instead.
+        var finishedCount = Math.min(2, finishedPool.length);
+        var soonCount = Math.min(4 - finishedCount, soonPool.length);
+        var leftover = 4 - finishedCount - soonCount;
+        if(leftover > 0){
+          var moreFinished = Math.min(leftover, finishedPool.length - finishedCount);
+          finishedCount += moreFinished;
+          leftover -= moreFinished;
+        }
+        if(leftover > 0){
+          soonCount += Math.min(leftover, soonPool.length - soonCount);
+        }
+
+        var slots = [];
+        if(current) slots.push({book: current, status: "reading", label: "Currently Reading"});
+        finishedPool.slice(0, finishedCount).forEach(function(b){ slots.push({book: b, status: "finished", label: "Finished"}); });
+        soonPool.slice(0, soonCount).forEach(function(b){ slots.push({book: b, status: "soon", label: "Coming Soon"}); });
+
+        var strip = document.getElementById('readingStrip');
+        if(!strip) return;
+        strip.innerHTML = slots.map(function(s){
+          var b = s.book;
+          return '<button type="button" class="strip-card" data-book="' + b.n + '">' +
+            '<span class="strip-status ' + s.status + '">' + s.label + '</span>' +
+            '<img class="strip-cover" src="covers/' + b.slug + '.jpg" alt="Cover of ' + b.title.replace(/"/g,'&quot;') + ' by ' + b.author.replace(/"/g,'&quot;') + '" loading="lazy">' +
+            '<h3>' + b.title + '</h3>' +
+            '<p class="strip-author">' + b.author + '</p>' +
+          '</button>';
+        }).join('');
+      }
+
+      buildStrip();
+
       var stripCards = Array.prototype.slice.call(document.querySelectorAll('.strip-card[data-book]'));
       var postCards = Array.prototype.slice.call(document.querySelectorAll('.post-card'));
       var filterBar = document.getElementById('filterBar');
       var filterLabel = document.getElementById('filterLabel');
       var clearBtn = document.getElementById('clearFilter');
-      var postsGrid = document.getElementById('postsGrid');
       var emptyState = document.getElementById('entriesEmptyState');
 
       function applyFilter(bookId){
@@ -460,7 +495,7 @@
         } else {
           filterBar.classList.remove('is-visible');
         }
-        if(emptyState) emptyState.classList.toggle('is-visible', bookId && matchCount === 0);
+        if(emptyState) emptyState.classList.toggle('is-visible', !!bookId && matchCount === 0);
       }
 
       function clearFilter(){
