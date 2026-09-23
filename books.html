@@ -97,18 +97,37 @@
   .post-more{ margin-top:4px; font-family:'IBM Plex Mono',monospace; font-size:0.8rem; text-transform:uppercase; text-decoration:none; border-bottom:2px solid var(--ink); align-self:flex-start; }
   .post-more:hover{ border-color:var(--amber); }
 
-  /* ---------- currently reading ---------- */
-  .reading-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
-  @media (max-width:700px){ .reading-grid{ grid-template-columns:1fr; } }
-  .book-card{ background:var(--panel); border:3px solid var(--ink); box-shadow:var(--hard); display:flex; gap:18px; padding:18px; align-items:flex-start; }
-  .book-cover{ width:96px; height:auto; flex-shrink:0; border:2px solid var(--ink); display:block; }
-  .book-info{ display:flex; flex-direction:column; gap:6px; }
-  .book-status{ align-self:flex-start; font-family:'IBM Plex Mono',monospace; font-size:0.68rem; letter-spacing:1px; text-transform:uppercase; padding:3px 8px; border:2px solid var(--ink); }
-  .book-status.done{ background:var(--amber); }
-  .book-status.next{ background:var(--bg); }
-  .book-status.queued{ background:var(--panel); color:var(--grey); }
-  .book-info h3{ font-size:1rem; text-transform:none; }
-  .book-author{ margin:0; font-size:0.82rem; color:var(--grey); }
+  /* ---------- reading strip (5-panel) ---------- */
+  .reading-strip{ display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }
+  @media (max-width:900px){ .reading-strip{ grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:520px){ .reading-strip{ grid-template-columns:1fr; } }
+  .strip-card{
+    background:var(--panel); border:3px solid var(--ink); box-shadow:var(--hard-sm);
+    padding:14px; display:flex; flex-direction:column; gap:8px; text-align:left;
+    text-decoration:none; color:var(--ink); cursor:pointer; font:inherit;
+    transition:transform .05s linear, box-shadow .05s linear;
+  }
+  .strip-card:hover{ transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink); }
+  .strip-card:active{ transform:translate(3px,3px); box-shadow:0 0 0 var(--ink); }
+  .strip-card.is-active{ outline:3px solid var(--amber); outline-offset:2px; }
+  .strip-card.empty{ align-items:center; justify-content:center; min-height:180px; cursor:default; color:var(--grey); border-style:dashed; box-shadow:none; }
+  .strip-card.empty:hover{ transform:none; }
+  .strip-cover{ width:100%; height:auto; border:2px solid var(--ink); }
+  .strip-status{ font-family:'IBM Plex Mono',monospace; font-size:0.64rem; letter-spacing:1px; text-transform:uppercase; padding:3px 8px; border:2px solid var(--ink); align-self:flex-start; }
+  .strip-status.reading{ background:var(--amber); }
+  .strip-status.finished{ background:var(--bg); }
+  .strip-status.soon{ background:var(--panel); color:var(--grey); }
+  .strip-card h3{ font-size:0.82rem; text-transform:none; line-height:1.25; margin:0; }
+  .strip-author{ margin:0; font-size:0.7rem; color:var(--grey); }
+  .strip-empty-label{ font-family:'IBM Plex Mono',monospace; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.5px; text-align:center; }
+
+  /* ---------- entries filter ---------- */
+  .filter-bar{ display:none; align-items:center; gap:12px; margin:-8px 0 24px; font-family:'IBM Plex Mono',monospace; font-size:0.8rem; }
+  .filter-bar.is-visible{ display:flex; flex-wrap:wrap; }
+  .filter-bar .clear{ text-decoration:underline; cursor:pointer; background:none; border:none; color:inherit; font:inherit; padding:0; }
+  .post-card.is-hidden{ display:none; }
+  .empty-state{ display:none; font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--grey); padding:24px 0; }
+  .empty-state.is-visible{ display:block; }
 
   /* ---------- stats band ---------- */
   .stats-band{ background:var(--ink); border:3px solid var(--ink); }
@@ -167,10 +186,13 @@
   .book-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:20px; }
   @media (max-width:900px){ .book-grid{ grid-template-columns:repeat(2,1fr); } }
   @media (max-width:480px){ .book-grid{ grid-template-columns:1fr; } }
-  .queue-card{ background:var(--panel); border:3px solid var(--ink); box-shadow:var(--hard-sm); padding:16px; display:flex; flex-direction:column; gap:10px; }
+  .queue-card{ background:var(--panel); border:3px solid var(--ink); box-shadow:var(--hard-sm); padding:16px; display:flex; flex-direction:column; gap:10px; text-decoration:none; color:var(--ink); transition:transform .05s linear, box-shadow .05s linear; }
+  .queue-card:hover{ transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink); }
+  .queue-card:active{ transform:translate(3px,3px); box-shadow:0 0 0 var(--ink); }
   .queue-card .book-cover{ width:100%; max-width:140px; height:auto; border:2px solid var(--ink); align-self:center; }
   .queue-info h3{ font-size:0.86rem; text-transform:none; line-height:1.3; margin:0; }
   .queue-info .book-author{ font-size:0.74rem; margin:0; }
+  .queue-hint{ margin-top:-6px; color:var(--grey); font-size:0.95rem; }
 </style>
 
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -195,170 +217,171 @@
     <span class="eyebrow">The Reading Queue</span>
     <h1>Twenty Books. One At A Time. No Skipping Ahead.</h1>
     <p class="sub">The full lineup, cover to cover, over roughly 80 weeks — each one read completely before the thirty days of allegedly living by it begins. No highlights-only shortcuts, no jumping to whichever one sounds more fun.</p>
+    <p class="queue-hint mono">Click any cover to jump back and see what's been filed under it.</p>
   </header>
 
   <section aria-label="Book queue">
     <div class="book-grid">
-      <div class="queue-card">
+      <a class="queue-card" href="index.html#book-1">
         <img class="book-cover" src="covers/01-subtle-art.jpg" alt="Cover of The Subtle Art of Not Giving a F*ck by Mark Manson" loading="lazy">
         <div class="queue-info">
           <span class="book-status done">Finished</span>
           <h3>#1 &middot; The Subtle Art of Not Giving a F*ck</h3>
           <p class="book-author">Mark Manson &middot; Weeks 1–4</p>
         </div>
-      </div>
-      <div class="queue-card">
+      </a>
+      <a class="queue-card" href="index.html#book-2">
         <img class="book-cover" src="covers/02-cant-hurt-me.jpg" alt="Cover of Can't Hurt Me by David Goggins" loading="lazy">
         <div class="queue-info">
-          <span class="book-status next">Up Next</span>
+          <span class="book-status next">Currently Reading</span>
           <h3>#2 &middot; Can't Hurt Me</h3>
           <p class="book-author">David Goggins &middot; Weeks 5–8</p>
         </div>
-      </div>
-      <div class="queue-card">
+      </a>
+      <a class="queue-card" href="index.html#book-3">
         <img class="book-cover" src="covers/03-miracle-morning.jpg" alt="Cover of The Miracle Morning by Hal Elrod" loading="lazy">
         <div class="queue-info">
-          <span class="book-status queued">Queued</span>
+          <span class="book-status queued">Coming Soon</span>
           <h3>#3 &middot; The Miracle Morning</h3>
           <p class="book-author">Hal Elrod &middot; Weeks 9–12</p>
         </div>
-      </div>
-      <div class="queue-card">
+      </a>
+      <a class="queue-card" href="index.html#book-4">
         <img class="book-cover" src="covers/04-atomic-habits.jpg" alt="Cover of Atomic Habits by James Clear" loading="lazy">
         <div class="queue-info">
-          <span class="book-status queued">Queued</span>
+          <span class="book-status queued">Coming Soon</span>
           <h3>#4 &middot; Atomic Habits</h3>
           <p class="book-author">James Clear &middot; Weeks 13–16</p>
         </div>
-      </div>
-      <div class="queue-card">
+      </a>
+      <a class="queue-card" href="index.html#book-5">
         <img class="book-cover" src="covers/05-rich-dad-poor-dad.jpg" alt="Cover of Rich Dad Poor Dad by Robert Kiyosaki" loading="lazy">
         <div class="queue-info">
           <span class="book-status queued">Queued</span>
           <h3>#5 &middot; Rich Dad Poor Dad</h3>
           <p class="book-author">Robert Kiyosaki &middot; Weeks 17–20</p>
         </div>
-      </div>
-      <div class="queue-card">
+      </a>
+      <a class="queue-card" href="index.html#book-6">
         <img class="book-cover" src="covers/06-extreme-ownership.jpg" alt="Cover of Extreme Ownership by Jocko Willink & Leif Babin" loading="lazy">
         <div class="queue-info">
           <span class="book-status queued">Queued</span>
           <h3>#6 &middot; Extreme Ownership</h3>
           <p class="book-author">Jocko Willink & Leif Babin &middot; Weeks 21–24</p>
         </div>
-      </div>
-      <div class="queue-card">
+      </a>
+      <a class="queue-card" href="index.html#book-7">
         <img class="book-cover" src="covers/07-4-hour-workweek.jpg" alt="Cover of The 4-Hour Workweek by Tim Ferriss" loading="lazy">
         <div class="queue-info">
           <span class="book-status queued">Queued</span>
           <h3>#7 &middot; The 4-Hour Workweek</h3>
           <p class="book-author">Tim Ferriss &middot; Weeks 25–28</p>
         </div>
-      </div>
-      <div class="queue-card">
+      </a>
+      <a class="queue-card" href="index.html#book-8">
         <img class="book-cover" src="covers/08-ikigai.jpg" alt="Cover of Ikigai by Hector Garcia and Francesc Miralles" loading="lazy">
         <div class="queue-info">
           <span class="book-status queued">Queued</span>
           <h3>#8 &middot; Ikigai</h3>
           <p class="book-author">Hector Garcia and Francesc Miralles &middot; Weeks 29–32</p>
         </div>
-      </div>
-      <div class="queue-card">
+      </a>
+      <a class="queue-card" href="index.html#book-9">
         <img class="book-cover" src="covers/09-deep-work.jpg" alt="Cover of Deep Work by Cal Newport" loading="lazy">
         <div class="queue-info">
           <span class="book-status queued">Queued</span>
           <h3>#9 &middot; Deep Work</h3>
           <p class="book-author">Cal Newport &middot; Weeks 33–36</p>
         </div>
-      </div>
-      <div class="queue-card">
+      </a>
+      <a class="queue-card" href="index.html#book-10">
         <img class="book-cover" src="covers/10-5am-club.jpg" alt="Cover of The 5AM Club by Robin Sharma" loading="lazy">
         <div class="queue-info">
           <span class="book-status queued">Queued</span>
           <h3>#10 &middot; The 5AM Club</h3>
           <p class="book-author">Robin Sharma &middot; Weeks 37–40</p>
         </div>
-      </div>
-      <div class="queue-card">
+      </a>
+      <a class="queue-card" href="index.html#book-11">
         <img class="book-cover" src="covers/11-obstacle-is-the-way.jpg" alt="Cover of The Obstacle Is the Way by Ryan Holiday" loading="lazy">
         <div class="queue-info">
           <span class="book-status queued">Queued</span>
           <h3>#11 &middot; The Obstacle Is the Way</h3>
           <p class="book-author">Ryan Holiday &middot; Weeks 41–44</p>
         </div>
-      </div>
-      <div class="queue-card">
+      </a>
+      <a class="queue-card" href="index.html#book-12">
         <img class="book-cover" src="covers/12-compound-effect.jpg" alt="Cover of The Compound Effect by Darren Hardy" loading="lazy">
         <div class="queue-info">
           <span class="book-status queued">Queued</span>
           <h3>#12 &middot; The Compound Effect</h3>
           <p class="book-author">Darren Hardy &middot; Weeks 45–48</p>
         </div>
-      </div>
-      <div class="queue-card">
+      </a>
+      <a class="queue-card" href="index.html#book-13">
         <img class="book-cover" src="covers/13-power-of-now.jpg" alt="Cover of The Power of Now by Eckhart Tolle" loading="lazy">
         <div class="queue-info">
           <span class="book-status queued">Queued</span>
           <h3>#13 &middot; The Power of Now</h3>
           <p class="book-author">Eckhart Tolle &middot; Weeks 49–52</p>
         </div>
-      </div>
-      <div class="queue-card">
+      </a>
+      <a class="queue-card" href="index.html#book-14">
         <img class="book-cover" src="covers/14-7-habits.jpg" alt="Cover of The 7 Habits of Highly Effective People by Stephen Covey" loading="lazy">
         <div class="queue-info">
           <span class="book-status queued">Queued</span>
           <h3>#14 &middot; The 7 Habits of Highly Effective People</h3>
           <p class="book-author">Stephen Covey &middot; Weeks 53–56</p>
         </div>
-      </div>
-      <div class="queue-card">
+      </a>
+      <a class="queue-card" href="index.html#book-15">
         <img class="book-cover" src="covers/15-think-and-grow-rich.jpg" alt="Cover of Think and Grow Rich by Napoleon Hill" loading="lazy">
         <div class="queue-info">
           <span class="book-status queued">Queued</span>
           <h3>#15 &middot; Think and Grow Rich</h3>
           <p class="book-author">Napoleon Hill &middot; Weeks 57–60</p>
         </div>
-      </div>
-      <div class="queue-card">
+      </a>
+      <a class="queue-card" href="index.html#book-16">
         <img class="book-cover" src="covers/16-never-split-the-difference.jpg" alt="Cover of Never Split the Difference by Chris Voss" loading="lazy">
         <div class="queue-info">
           <span class="book-status queued">Queued</span>
           <h3>#16 &middot; Never Split the Difference</h3>
           <p class="book-author">Chris Voss &middot; Weeks 61–64</p>
         </div>
-      </div>
-      <div class="queue-card">
+      </a>
+      <a class="queue-card" href="index.html#book-17">
         <img class="book-cover" src="covers/17-peak.jpg" alt="Cover of Peak by Anders Ericsson" loading="lazy">
         <div class="queue-info">
           <span class="book-status queued">Queued</span>
           <h3>#17 &middot; Peak</h3>
           <p class="book-author">Anders Ericsson &middot; Weeks 65–68</p>
         </div>
-      </div>
-      <div class="queue-card">
+      </a>
+      <a class="queue-card" href="index.html#book-18">
         <img class="book-cover" src="covers/18-millionaire-fastlane.jpg" alt="Cover of The Millionaire Fastlane by MJ DeMarco" loading="lazy">
         <div class="queue-info">
           <span class="book-status queued">Queued</span>
           <h3>#18 &middot; The Millionaire Fastlane</h3>
           <p class="book-author">MJ DeMarco &middot; Weeks 69–72</p>
         </div>
-      </div>
-      <div class="queue-card">
+      </a>
+      <a class="queue-card" href="index.html#book-19">
         <img class="book-cover" src="covers/19-outliers.jpg" alt="Cover of Outliers by Malcolm Gladwell" loading="lazy">
         <div class="queue-info">
           <span class="book-status queued">Queued</span>
           <h3>#19 &middot; Outliers</h3>
           <p class="book-author">Malcolm Gladwell &middot; Weeks 73–76</p>
         </div>
-      </div>
-      <div class="queue-card">
+      </a>
+      <a class="queue-card" href="index.html#book-20">
         <img class="book-cover" src="covers/20-psychology-of-money.jpg" alt="Cover of The Psychology of Money by Morgan Housel" loading="lazy">
         <div class="queue-info">
           <span class="book-status queued">Queued</span>
           <h3>#20 &middot; The Psychology of Money</h3>
           <p class="book-author">Morgan Housel &middot; Weeks 77–80</p>
         </div>
-      </div>
+      </a>
     </div>
   </section>
 
