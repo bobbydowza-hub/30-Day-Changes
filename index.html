@@ -112,7 +112,7 @@
   .strip-card.is-active{ outline:3px solid var(--amber); outline-offset:2px; }
   .strip-card.empty{ align-items:center; justify-content:center; min-height:180px; cursor:default; color:var(--grey); border-style:dashed; box-shadow:none; }
   .strip-card.empty:hover{ transform:none; }
-  .strip-cover{ width:100%; height:auto; border:2px solid var(--ink); }
+  .strip-cover{ width:100%; aspect-ratio:2/3; object-fit:cover; border:2px solid var(--ink); display:block; }
   .strip-status{ font-family:'IBM Plex Mono',monospace; font-size:0.64rem; letter-spacing:1px; text-transform:uppercase; padding:3px 8px; border:2px solid var(--ink); align-self:flex-start; }
   .strip-status.reading{ background:var(--amber); }
   .strip-status.finished{ background:var(--bg); }
@@ -290,22 +290,22 @@
         <p class="strip-author">David Goggins</p>
       </button>
       <button type="button" class="strip-card" data-book="1">
-        <span class="strip-status finished">Finished [1]</span>
+        <span class="strip-status finished">Finished</span>
         <img class="strip-cover" src="covers/01-subtle-art.jpg" alt="Cover of The Subtle Art of Not Giving a F*ck by Mark Manson" loading="lazy">
         <h3>The Subtle Art of Not Giving a F*ck</h3>
         <p class="strip-author">Mark Manson</p>
       </button>
       <div class="strip-card empty">
-        <span class="strip-empty-label">Finished [2]<br>— nothing yet —</span>
+        <span class="strip-empty-label">Finished<br>— nothing yet —</span>
       </div>
       <button type="button" class="strip-card" data-book="3">
-        <span class="strip-status soon">Coming Soon [1]</span>
+        <span class="strip-status soon">Coming Soon</span>
         <img class="strip-cover" src="covers/03-miracle-morning.jpg" alt="Cover of The Miracle Morning by Hal Elrod" loading="lazy">
         <h3>The Miracle Morning</h3>
         <p class="strip-author">Hal Elrod</p>
       </button>
       <button type="button" class="strip-card" data-book="4">
-        <span class="strip-status soon">Coming Soon [2]</span>
+        <span class="strip-status soon">Coming Soon</span>
         <img class="strip-cover" src="covers/04-atomic-habits.jpg" alt="Cover of Atomic Habits by James Clear" loading="lazy">
         <h3>Atomic Habits</h3>
         <p class="strip-author">James Clear</p>
