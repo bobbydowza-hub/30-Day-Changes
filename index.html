@@ -97,6 +97,19 @@
   .post-more{ margin-top:4px; font-family:'IBM Plex Mono',monospace; font-size:0.8rem; text-transform:uppercase; text-decoration:none; border-bottom:2px solid var(--ink); align-self:flex-start; }
   .post-more:hover{ border-color:var(--amber); }
 
+  /* ---------- currently reading ---------- */
+  .reading-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  @media (max-width:700px){ .reading-grid{ grid-template-columns:1fr; } }
+  .book-card{ background:var(--panel); border:3px solid var(--ink); box-shadow:var(--hard); display:flex; gap:18px; padding:18px; align-items:flex-start; }
+  .book-cover{ width:96px; height:auto; flex-shrink:0; border:2px solid var(--ink); display:block; }
+  .book-info{ display:flex; flex-direction:column; gap:6px; }
+  .book-status{ align-self:flex-start; font-family:'IBM Plex Mono',monospace; font-size:0.68rem; letter-spacing:1px; text-transform:uppercase; padding:3px 8px; border:2px solid var(--ink); }
+  .book-status.done{ background:var(--amber); }
+  .book-status.next{ background:var(--bg); }
+  .book-status.queued{ background:var(--panel); color:var(--grey); }
+  .book-info h3{ font-size:1rem; text-transform:none; }
+  .book-author{ margin:0; font-size:0.82rem; color:var(--grey); }
+
   /* ---------- stats band ---------- */
   .stats-band{ background:var(--ink); border:3px solid var(--ink); }
   .stats-grid{ display:grid; grid-template-columns:repeat(4,1fr); text-align:center; }
@@ -177,6 +190,7 @@
       <a href="#wealth">Wealth</a>
       <a href="#family">Family</a>
       <a href="#chaos">Chaos</a>
+      <a href="books.html">Books</a>
       <a href="#about">About</a>
     </div>
   </nav>
@@ -236,6 +250,33 @@
         </div>
       </article>
     </div>
+  </section>
+
+  <section id="reading" aria-label="Currently reading">
+    <div class="section-head">
+      <span class="eyebrow">The Actual Point of This Whole Thing</span>
+      <h2>Currently Reading</h2>
+      <p>One book at a time, cover to cover, before the thirty days of pretending to have learned something begins.</p>
+    </div>
+    <div class="reading-grid">
+      <div class="book-card">
+        <img class="book-cover" src="covers/01-subtle-art.jpg" alt="Cover of The Subtle Art of Not Giving a F*ck by Mark Manson" loading="lazy">
+        <div class="book-info">
+          <span class="book-status done">Finished</span>
+          <h3>The Subtle Art of Not Giving a F*ck</h3>
+          <p class="book-author">Mark Manson</p>
+        </div>
+      </div>
+      <div class="book-card">
+        <img class="book-cover" src="covers/02-cant-hurt-me.jpg" alt="Cover of Can't Hurt Me by David Goggins" loading="lazy">
+        <div class="book-info">
+          <span class="book-status next">Up Next</span>
+          <h3>Can't Hurt Me</h3>
+          <p class="book-author">David Goggins</p>
+        </div>
+      </div>
+    </div>
+    <a class="post-more" href="books.html" style="margin-top:18px; display:inline-block;">See the full 20-book queue &rarr;</a>
   </section>
 
   <section aria-label="By the numbers" style="padding-block:0 48px;">

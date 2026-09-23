@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Books — 30 Day Changes</title>
+<style>
+
+  :root{
+    --bg:#f2efe4;
+    --panel:#ffffff;
+    --ink:#141210;
+    --grey:#847c6c;
+    --amber:#39ff14;
+    --hard: 6px 6px 0 var(--ink);
+    --hard-sm: 4px 4px 0 var(--ink);
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Archivo', system-ui, sans-serif;
+    padding-left:max(20px, env(safe-area-inset-left,0px));
+    padding-right:max(20px, env(safe-area-inset-right,0px));
+  }
+  .page{ max-width:1040px; margin:0 auto; }
+
+  h1,h2,h3{ font-family:'Archivo Black', 'Archivo', sans-serif; margin:0; text-wrap:balance; line-height:1.05; text-transform:uppercase; letter-spacing:-0.01em; }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+  .num{ font-variant-numeric:tabular-nums; }
+  .eyebrow{ font-family:'IBM Plex Mono',monospace; font-size:0.72rem; letter-spacing:1.5px; text-transform:uppercase; }
+  p{ line-height:1.6; }
+  a{ color:inherit; }
+  a:focus-visible, button:focus-visible, input:focus-visible{ outline:3px solid var(--amber); outline-offset:2px; }
+  mark{ background:var(--amber); color:var(--ink); padding:0 6px; box-decoration-break:clone; -webkit-box-decoration-break:clone; }
+
+  /* ---------- nav ---------- */
+  nav{
+    position:sticky; top:env(safe-area-inset-top,0px); z-index:10; background:var(--bg);
+    display:flex; align-items:center; justify-content:space-between; gap:16px; padding-block:18px;
+    border-bottom:3px solid var(--ink); flex-wrap:wrap;
+  }
+  .logo{ font-family:'Archivo Black',sans-serif; font-size:1.15rem; text-transform:uppercase; }
+  .navlinks{ display:flex; gap:22px; flex-wrap:wrap; }
+  .navlinks a{ text-decoration:none; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid transparent; padding-bottom:3px; }
+  .navlinks a:hover{ border-color:var(--amber); }
+
+  /* ---------- hero (canva-style headline over image) ---------- */
+  .hero{ padding-block:34px 20px; }
+  .hero-media{
+    position:relative; border:3px solid var(--ink); box-shadow:var(--hard); background:var(--bg);
+    padding:34px 26px; min-height:440px; display:flex; align-items:flex-end; overflow:hidden;
+  }
+  .p-layer{ position:absolute; left:0; top:-15%; width:100%; height:130%; display:block; will-change:transform; }
+  .hero-photo{ object-fit:cover; object-position:46% 26%; }
+  @media (max-width:700px){ .hero-media{ min-height:320px; } }
+  .dot-overlay{
+    position:absolute; inset:0; pointer-events:none;
+    background-image:radial-gradient(var(--ink) 1px, transparent 1px);
+    background-size:7px 7px; opacity:0.07;
+  }
+  .hero-media h1{ color:#f6f1e6; font-size:clamp(2.1rem, 6vw, 3.6rem); max-width:16ch; position:relative; z-index:1; line-height:1.12; }
+  .hero-media h1 .label{ background:var(--ink); color:#f6f1e6; padding:4px 12px; box-decoration-break:clone; -webkit-box-decoration-break:clone; }
+  .hero-foot{ display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px; margin-top:18px; }
+  .sub{ max-width:56ch; font-size:1rem; color:var(--ink); margin-top:20px; }
+  .ctas{ display:flex; gap:16px; flex-wrap:wrap; margin-top:24px; }
+  .btn{
+    font-family:'IBM Plex Mono',monospace; font-weight:500; text-decoration:none; font-size:0.85rem;
+    text-transform:uppercase; letter-spacing:0.5px; padding:14px 22px; display:inline-block;
+    border:3px solid var(--ink); box-shadow:var(--hard-sm); background:var(--panel); color:var(--ink);
+    transition:transform .05s linear, box-shadow .05s linear;
+  }
+  .btn.primary{ background:var(--amber); }
+  .btn:hover{ transform:translate(2px,2px); box-shadow:2px 2px 0 var(--ink); }
+  .btn:active{ transform:translate(4px,4px); box-shadow:0 0 0 var(--ink); }
+  .socials{ display:flex; gap:16px; }
+  .socials a{ font-family:'IBM Plex Mono',monospace; font-size:0.78rem; text-decoration:none; text-transform:uppercase; border-bottom:2px solid transparent; }
+  .socials a:hover{ border-color:var(--amber); }
+
+  /* ---------- press bar ---------- */
+  .press{ background:var(--ink); color:#f6f1e6; padding-block:16px; margin-top:26px; border:3px solid var(--ink); }
+  .press-row{ display:flex; justify-content:center; gap:26px; flex-wrap:wrap; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; letter-spacing:0.5px; text-transform:uppercase; text-align:center; }
+
+  section{ padding-block:48px; }
+  .section-head{ max-width:64ch; margin-bottom:28px; }
+  .section-head p{ margin-top:8px; color:var(--grey); font-size:0.95rem; }
+
+  /* ---------- posts grid ---------- */
+  .posts{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  @media (max-width:700px){ .posts{ grid-template-columns:1fr; } }
+  .post-card{ background:var(--panel); border:3px solid var(--ink); box-shadow:var(--hard); display:flex; flex-direction:column; }
+  .post-img{ position:relative; background:#211c15; min-height:200px; border-bottom:3px solid var(--ink); display:flex; align-items:flex-end; padding:14px; overflow:hidden; }
+  .post-img .illus{ position:absolute; right:-14px; top:-14px; width:74%; height:auto; }
+  .post-img h3{ color:#f6f1e6; font-size:1.15rem; position:relative; z-index:1; max-width:16ch; }
+  .post-body{ padding:20px 22px 24px; display:flex; flex-direction:column; gap:10px; }
+  .post-tag{ font-family:'IBM Plex Mono',monospace; font-size:0.68rem; letter-spacing:1px; text-transform:uppercase; color:var(--grey); }
+  .post-body p{ margin:0; font-size:0.9rem; color:var(--ink); }
+  .post-more{ margin-top:4px; font-family:'IBM Plex Mono',monospace; font-size:0.8rem; text-transform:uppercase; text-decoration:none; border-bottom:2px solid var(--ink); align-self:flex-start; }
+  .post-more:hover{ border-color:var(--amber); }
+
+  /* ---------- currently reading ---------- */
+  .reading-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  @media (max-width:700px){ .reading-grid{ grid-template-columns:1fr; } }
+  .book-card{ background:var(--panel); border:3px solid var(--ink); box-shadow:var(--hard); display:flex; gap:18px; padding:18px; align-items:flex-start; }
+  .book-cover{ width:96px; height:auto; flex-shrink:0; border:2px solid var(--ink); display:block; }
+  .book-info{ display:flex; flex-direction:column; gap:6px; }
+  .book-status{ align-self:flex-start; font-family:'IBM Plex Mono',monospace; font-size:0.68rem; letter-spacing:1px; text-transform:uppercase; padding:3px 8px; border:2px solid var(--ink); }
+  .book-status.done{ background:var(--amber); }
+  .book-status.next{ background:var(--bg); }
+  .book-status.queued{ background:var(--panel); color:var(--grey); }
+  .book-info h3{ font-size:1rem; text-transform:none; }
+  .book-author{ margin:0; font-size:0.82rem; color:var(--grey); }
+
+  /* ---------- stats band ---------- */
+  .stats-band{ background:var(--ink); border:3px solid var(--ink); }
+  .stats-grid{ display:grid; grid-template-columns:repeat(4,1fr); text-align:center; }
+  @media (max-width:640px){ .stats-grid{ grid-template-columns:repeat(2,1fr); } }
+  .stat{ padding:26px 14px; border-right:3px solid #3a352c; }
+  .stat:last-child{ border-right:none; }
+  @media (max-width:640px){ .stat:nth-child(2n){ border-right:none; } }
+  .stat .value{ font-family:'IBM Plex Mono',monospace; font-size:2rem; font-weight:500; color:var(--amber); }
+  .stat .cap{ margin-top:6px; font-size:0.72rem; letter-spacing:0.5px; text-transform:uppercase; color:#e7dfcd; }
+
+  /* ---------- pillars ---------- */
+  .pillars{ display:grid; grid-template-columns:repeat(4,1fr); gap:22px; }
+  @media (max-width:760px){ .pillars{ grid-template-columns:repeat(2,1fr); } }
+  .pillar{ background:var(--panel); border:3px solid var(--ink); box-shadow:var(--hard-sm); padding:22px 18px; display:flex; flex-direction:column; gap:10px; }
+  .pillar h3{ font-size:1.1rem; }
+  .pillar p{ margin:0; font-size:0.84rem; color:var(--grey); }
+  .meter{ margin-top:auto; padding-top:4px; }
+  .meter .row{ display:flex; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--grey); margin-bottom:6px; }
+  .meter .track{ height:8px; background:var(--bg); border:2px solid var(--ink); }
+  .meter .fill{ height:100%; background:var(--amber); }
+  .figure .value{ font-family:'Archivo Black',sans-serif; font-size:1.5rem; text-transform:none; }
+  .figure .value .unit{ font-family:'IBM Plex Mono',monospace; font-size:0.8rem; color:var(--grey); margin-left:3px; }
+  .figure .cap{ margin-top:2px; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--grey); text-transform:uppercase; }
+
+  /* ---------- bio ---------- */
+  .bio{ background:var(--panel); border:3px solid var(--ink); box-shadow:var(--hard); padding:30px 26px; display:flex; gap:24px; align-items:center; flex-wrap:wrap; }
+  .avatar{ width:88px; height:88px; flex-shrink:0; background:var(--amber); border:3px solid var(--ink); display:flex; align-items:center; justify-content:center; font-family:'Archivo Black',sans-serif; font-size:1.5rem; }
+  .bio-text{ flex:1; min-width:240px; }
+  .bio-text h3{ font-size:1.2rem; margin-bottom:8px; }
+  .bio-text p{ margin:0; color:var(--grey); font-size:0.92rem; }
+  .badges{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+  .badge{ font-family:'IBM Plex Mono',monospace; font-size:0.68rem; text-transform:uppercase; padding:5px 10px; border:2px solid var(--ink); }
+
+  /* ---------- newsletter ---------- */
+  .newsletter{ text-align:left; background:var(--amber); border:3px solid var(--ink); box-shadow:var(--hard); padding:36px 30px; }
+  .newsletter h2{ font-size:1.6rem; }
+  .newsletter p{ margin:10px 0 0; max-width:48ch; font-size:0.92rem; }
+  .signup{ display:flex; gap:12px; margin-top:22px; flex-wrap:wrap; }
+  .signup input{ font-family:'IBM Plex Mono',monospace; font-size:0.85rem; padding:13px 16px; border:3px solid var(--ink); min-width:220px; background:var(--panel); }
+  .signup button{ font-family:'IBM Plex Mono',monospace; font-weight:500; text-transform:uppercase; font-size:0.85rem; padding:13px 22px; border:3px solid var(--ink); background:var(--ink); color:var(--bg); cursor:pointer; box-shadow:var(--hard-sm); }
+
+  /* ---------- footer ---------- */
+  footer{ background:var(--ink); color:#e7dfcd; margin-top:20px; padding-block:32px; padding-inline:20px;
+    margin-inline: max(-20px, calc(-1 * env(safe-area-inset-left,0px) - 20px)); border-top:3px solid var(--amber); }
+  footer .inner{ max-width:1000px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
+  footer .row{ display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:center; }
+  footer p{ margin:0; font-size:0.85rem; max-width:60ch; }
+  footer .socials a{ color:#e7dfcd; }
+  footer .socials a:hover{ border-color:var(--amber); }
+  .fine{ font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:#a89f8b; }
+
+  /* ---------- book queue page ---------- */
+  .queue-head{ padding-block:34px 10px; }
+  .queue-head h1{ font-size:clamp(1.8rem, 5vw, 2.8rem); margin-top:10px; max-width:20ch; }
+  .book-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:20px; }
+  @media (max-width:900px){ .book-grid{ grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:480px){ .book-grid{ grid-template-columns:1fr; } }
+  .queue-card{ background:var(--panel); border:3px solid var(--ink); box-shadow:var(--hard-sm); padding:16px; display:flex; flex-direction:column; gap:10px; }
+  .queue-card .book-cover{ width:100%; max-width:140px; height:auto; border:2px solid var(--ink); align-self:center; }
+  .queue-info h3{ font-size:0.86rem; text-transform:none; line-height:1.3; margin:0; }
+  .queue-info .book-author{ font-size:0.74rem; margin:0; }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500&display=swap">
+</head>
+<body>
+
+<div class="page">
+
+  <nav aria-label="Primary">
+    <div class="logo">30 Day Changes</div>
+    <div class="navlinks">
+      <a href="index.html#wellness">Wellness</a>
+      <a href="index.html#wealth">Wealth</a>
+      <a href="index.html#family">Family</a>
+      <a href="index.html#chaos">Chaos</a>
+      <a href="books.html">Books</a>
+      <a href="index.html#about">About</a>
+    </div>
+  </nav>
+
+  <header class="queue-head">
+    <span class="eyebrow">The Reading Queue</span>
+    <h1>Twenty Books. One At A Time. No Skipping Ahead.</h1>
+    <p class="sub">The full lineup, cover to cover, over roughly 80 weeks — each one read completely before the thirty days of allegedly living by it begins. No highlights-only shortcuts, no jumping to whichever one sounds more fun.</p>
+  </header>
+
+  <section aria-label="Book queue">
+    <div class="book-grid">
+      <div class="queue-card">
+        <img class="book-cover" src="covers/01-subtle-art.jpg" alt="Cover of The Subtle Art of Not Giving a F*ck by Mark Manson" loading="lazy">
+        <div class="queue-info">
+          <span class="book-status done">Finished</span>
+          <h3>#1 &middot; The Subtle Art of Not Giving a F*ck</h3>
+          <p class="book-author">Mark Manson &middot; Weeks 1–4</p>
+        </div>
+      </div>
+      <div class="queue-card">
+        <img class="book-cover" src="covers/02-cant-hurt-me.jpg" alt="Cover of Can't Hurt Me by David Goggins" loading="lazy">
+        <div class="queue-info">
+          <span class="book-status next">Up Next</span>
+          <h3>#2 &middot; Can't Hurt Me</h3>
+          <p class="book-author">David Goggins &middot; Weeks 5–8</p>
+        </div>
+      </div>
+      <div class="queue-card">
+        <img class="book-cover" src="covers/03-miracle-morning.jpg" alt="Cover of The Miracle Morning by Hal Elrod" loading="lazy">
+        <div class="queue-info">
+          <span class="book-status queued">Queued</span>
+          <h3>#3 &middot; The Miracle Morning</h3>
+          <p class="book-author">Hal Elrod &middot; Weeks 9–12</p>
+        </div>
+      </div>
+      <div class="queue-card">
+        <img class="book-cover" src="covers/04-atomic-habits.jpg" alt="Cover of Atomic Habits by James Clear" loading="lazy">
+        <div class="queue-info">
+          <span class="book-status queued">Queued</span>
+          <h3>#4 &middot; Atomic Habits</h3>
+          <p class="book-author">James Clear &middot; Weeks 13–16</p>
+        </div>
+      </div>
+      <div class="queue-card">
+        <img class="book-cover" src="covers/05-rich-dad-poor-dad.jpg" alt="Cover of Rich Dad Poor Dad by Robert Kiyosaki" loading="lazy">
+        <div class="queue-info">
+          <span class="book-status queued">Queued</span>
+          <h3>#5 &middot; Rich Dad Poor Dad</h3>
+          <p class="book-author">Robert Kiyosaki &middot; Weeks 17–20</p>
+        </div>
+      </div>
+      <div class="queue-card">
+        <img class="book-cover" src="covers/06-extreme-ownership.jpg" alt="Cover of Extreme Ownership by Jocko Willink & Leif Babin" loading="lazy">
+        <div class="queue-info">
+          <span class="book-status queued">Queued</span>
+          <h3>#6 &middot; Extreme Ownership</h3>
+          <p class="book-author">Jocko Willink & Leif Babin &middot; Weeks 21–24</p>
+        </div>
+      </div>
+      <div class="queue-card">
+        <img class="book-cover" src="covers/07-4-hour-workweek.jpg" alt="Cover of The 4-Hour Workweek by Tim Ferriss" loading="lazy">
+        <div class="queue-info">
+          <span class="book-status queued">Queued</span>
+          <h3>#7 &middot; The 4-Hour Workweek</h3>
+          <p class="book-author">Tim Ferriss &middot; Weeks 25–28</p>
+        </div>
+      </div>
+      <div class="queue-card">
+        <img class="book-cover" src="covers/08-ikigai.jpg" alt="Cover of Ikigai by Hector Garcia and Francesc Miralles" loading="lazy">
+        <div class="queue-info">
+          <span class="book-status queued">Queued</span>
+          <h3>#8 &middot; Ikigai</h3>
+          <p class="book-author">Hector Garcia and Francesc Miralles &middot; Weeks 29–32</p>
+        </div>
+      </div>
+      <div class="queue-card">
+        <img class="book-cover" src="covers/09-deep-work.jpg" alt="Cover of Deep Work by Cal Newport" loading="lazy">
+        <div class="queue-info">
+          <span class="book-status queued">Queued</span>
+          <h3>#9 &middot; Deep Work</h3>
+          <p class="book-author">Cal Newport &middot; Weeks 33–36</p>
+        </div>
+      </div>
+      <div class="queue-card">
+        <img class="book-cover" src="covers/10-5am-club.jpg" alt="Cover of The 5AM Club by Robin Sharma" loading="lazy">
+        <div class="queue-info">
+          <span class="book-status queued">Queued</span>
+          <h3>#10 &middot; The 5AM Club</h3>
+          <p class="book-author">Robin Sharma &middot; Weeks 37–40</p>
+        </div>
+      </div>
+      <div class="queue-card">
+        <img class="book-cover" src="covers/11-obstacle-is-the-way.jpg" alt="Cover of The Obstacle Is the Way by Ryan Holiday" loading="lazy">
+        <div class="queue-info">
+          <span class="book-status queued">Queued</span>
+          <h3>#11 &middot; The Obstacle Is the Way</h3>
+          <p class="book-author">Ryan Holiday &middot; Weeks 41–44</p>
+        </div>
+      </div>
+      <div class="queue-card">
+        <img class="book-cover" src="covers/12-compound-effect.jpg" alt="Cover of The Compound Effect by Darren Hardy" loading="lazy">
+        <div class="queue-info">
+          <span class="book-status queued">Queued</span>
+          <h3>#12 &middot; The Compound Effect</h3>
+          <p class="book-author">Darren Hardy &middot; Weeks 45–48</p>
+        </div>
+      </div>
+      <div class="queue-card">
+        <img class="book-cover" src="covers/13-power-of-now.jpg" alt="Cover of The Power of Now by Eckhart Tolle" loading="lazy">
+        <div class="queue-info">
+          <span class="book-status queued">Queued</span>
+          <h3>#13 &middot; The Power of Now</h3>
+          <p class="book-author">Eckhart Tolle &middot; Weeks 49–52</p>
+        </div>
+      </div>
+      <div class="queue-card">
+        <img class="book-cover" src="covers/14-7-habits.jpg" alt="Cover of The 7 Habits of Highly Effective People by Stephen Covey" loading="lazy">
+        <div class="queue-info">
+          <span class="book-status queued">Queued</span>
+          <h3>#14 &middot; The 7 Habits of Highly Effective People</h3>
+          <p class="book-author">Stephen Covey &middot; Weeks 53–56</p>
+        </div>
+      </div>
+      <div class="queue-card">
+        <img class="book-cover" src="covers/15-think-and-grow-rich.jpg" alt="Cover of Think and Grow Rich by Napoleon Hill" loading="lazy">
+        <div class="queue-info">
+          <span class="book-status queued">Queued</span>
+          <h3>#15 &middot; Think and Grow Rich</h3>
+          <p class="book-author">Napoleon Hill &middot; Weeks 57–60</p>
+        </div>
+      </div>
+      <div class="queue-card">
+        <img class="book-cover" src="covers/16-never-split-the-difference.jpg" alt="Cover of Never Split the Difference by Chris Voss" loading="lazy">
+        <div class="queue-info">
+          <span class="book-status queued">Queued</span>
+          <h3>#16 &middot; Never Split the Difference</h3>
+          <p class="book-author">Chris Voss &middot; Weeks 61–64</p>
+        </div>
+      </div>
+      <div class="queue-card">
+        <img class="book-cover" src="covers/17-peak.jpg" alt="Cover of Peak by Anders Ericsson" loading="lazy">
+        <div class="queue-info">
+          <span class="book-status queued">Queued</span>
+          <h3>#17 &middot; Peak</h3>
+          <p class="book-author">Anders Ericsson &middot; Weeks 65–68</p>
+        </div>
+      </div>
+      <div class="queue-card">
+        <img class="book-cover" src="covers/18-millionaire-fastlane.jpg" alt="Cover of The Millionaire Fastlane by MJ DeMarco" loading="lazy">
+        <div class="queue-info">
+          <span class="book-status queued">Queued</span>
+          <h3>#18 &middot; The Millionaire Fastlane</h3>
+          <p class="book-author">MJ DeMarco &middot; Weeks 69–72</p>
+        </div>
+      </div>
+      <div class="queue-card">
+        <img class="book-cover" src="covers/19-outliers.jpg" alt="Cover of Outliers by Malcolm Gladwell" loading="lazy">
+        <div class="queue-info">
+          <span class="book-status queued">Queued</span>
+          <h3>#19 &middot; Outliers</h3>
+          <p class="book-author">Malcolm Gladwell &middot; Weeks 73–76</p>
+        </div>
+      </div>
+      <div class="queue-card">
+        <img class="book-cover" src="covers/20-psychology-of-money.jpg" alt="Cover of The Psychology of Money by Morgan Housel" loading="lazy">
+        <div class="queue-info">
+          <span class="book-status queued">Queued</span>
+          <h3>#20 &middot; The Psychology of Money</h3>
+          <p class="book-author">Morgan Housel &middot; Weeks 77–80</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="inner">
+      <div class="row">
+        <strong class="logo" style="color:#f6f1e6;">30 Day Changes</strong>
+        <div class="socials"><a href="#">Instagram</a><a href="#">TikTok</a><a href="#">X</a></div>
+      </div>
+      <p>One book, thirty days, four pillars — filed as it happens, not tidied up after. The aesthetic is aspirational. The content is not.</p>
+      <span class="fine">Est. 17 Aug 2026</span>
+    </div>
+  </footer>
+
+</div>
+
+</body>
+</html>
