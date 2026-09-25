@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-Fetches real book cover art from Open Library (a free, purpose-built
-API for exactly this — no scraping, no copyright grey area) for the
-30 Day Changes reading queue, and saves them into a `covers/` folder
-next to index.html.
+Fetches higher-resolution book cover art for the 30 Day Changes reading
+queue. Tries Google Books first (usually sharper and larger than Open
+Library's images), falls back to Open Library, and keeps whichever
+result actually has more pixels. Both are official public APIs made
+for exactly this kind of use -- no scraping, no copyright grey area.
 
 Run this from anywhere on your Mac (needs normal internet access,
 which is why it's a script for your own Terminal rather than
@@ -11,13 +12,29 @@ something Claude runs through the device bridge):
 
     python3 fetch_covers.py
 
-It's safe to re-run — it'll just overwrite the same files.
+Needs Pillow to compare image dimensions -- install it first if you
+don't have it:
+
+    pip3 install pillow
+
+Safe to re-run -- it overwrites covers/ with whichever source wins
+each time.
 """
+import io
 import json
 import os
+import re
 import time
 import urllib.parse
 import urllib.request
+
+try:
+    from PIL import Image
+    HAVE_PIL = True
+except ImportError:
+    HAVE_PIL = False
+    print("NOTE: Pillow isn't installed (pip3 install pillow) -- can't compare")
+    print("resolutions, so this will just keep whichever source responds last.\n")
 
 BOOKS = [
     {"n": 1, "title": "The Subtle Art of Not Giving a F*ck", "author": "Mark Manson", "slug": "01-subtle-art"},
@@ -46,36 +63,105 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUT_DIR = os.path.join(HERE, "covers")
 os.makedirs(OUT_DIR, exist_ok=True)
 
+UA = {"User-Agent": "30DayChanges-CoverFetcher/2.0 (personal project)"}
+
+
+def fetch(url, timeout=15):
+    req = urllib.request.Request(url, headers=UA)
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.read()
+
+
+def pixel_size(data):
+    if not HAVE_PIL:
+        return None
+    try:
+        return Image.open(io.BytesIO(data)).size
+    except Exception:
+        return None
+
+
+def area(size):
+    return size[0] * size[1] if size else 0
+
+
+def google_books_cover(title, author):
+    q = urllib.parse.urlencode({"q": f"intitle:{title} inauthor:{author}", "maxResults": 3})
+    url = f"https://www.googleapis.com/books/v1/volumes?{q}"
+    try:
+        data = json.loads(fetch(url))
+    except Exception:
+        return None
+    for item in data.get("items", []):
+        links = item.get("volumeInfo", {}).get("imageLinks", {})
+        base = (links.get("extraLarge") or links.get("large") or links.get("medium")
+                or links.get("small") or links.get("thumbnail") or links.get("smallThumbnail"))
+        if not base:
+            continue
+        # Google's search results default to a small thumbnail, but bumping
+        # zoom and dropping the curl-page effect unlocks a much bigger image
+        big_url = re.sub(r"zoom=\d", "zoom=3", base)
+        big_url = big_url.replace("&edge=curl", "").replace("http://", "https://")
+        try:
+            img = fetch(big_url)
+            size = pixel_size(img)
+            if HAVE_PIL and area(size) <= 40 * 40:
+                continue  # corrupt/placeholder pixel, skip
+            return img, size
+        except Exception:
+            continue
+    return None
+
+
+def open_library_cover(title, author):
+    q = urllib.parse.urlencode({"title": title, "author": author, "limit": 1, "fields": "cover_i,title"})
+    url = f"https://openlibrary.org/search.json?{q}"
+    try:
+        data = json.loads(fetch(url))
+    except Exception:
+        return None
+    docs = data.get("docs", [])
+    cover_i = docs[0].get("cover_i") if docs else None
+    if not cover_i:
+        return None
+    img_url = f"https://covers.openlibrary.org/b/id/{cover_i}-L.jpg"
+    try:
+        img = fetch(img_url)
+        return img, pixel_size(img)
+    except Exception:
+        return None
+
+
 misses = []
 
 for b in BOOKS:
-    q = urllib.parse.urlencode({
-        "title": b["title"],
-        "author": b["author"],
-        "limit": 1,
-        "fields": "cover_i,title",
-    })
-    url = f"https://openlibrary.org/search.json?{q}"
     dest = os.path.join(OUT_DIR, f"{b['slug']}.jpg")
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "30DayChanges-CoverFetcher/1.0 (personal project)"})
-        with urllib.request.urlopen(req, timeout=15) as r:
-            data = json.load(r)
-        docs = data.get("docs", [])
-        cover_i = docs[0].get("cover_i") if docs else None
-        if cover_i:
-            img_url = f"https://covers.openlibrary.org/b/id/{cover_i}-L.jpg"
-            img_req = urllib.request.Request(img_url, headers={"User-Agent": "30DayChanges-CoverFetcher/1.0 (personal project)"})
-            with urllib.request.urlopen(img_req, timeout=15) as r, open(dest, "wb") as f:
-                f.write(r.read())
-            print(f"OK    #{b['n']:>2}  {b['title']}")
-        else:
-            print(f"MISS  #{b['n']:>2}  {b['title']}  (no cover found on Open Library)")
-            misses.append(b["title"])
-    except Exception as e:
-        print(f"ERR   #{b['n']:>2}  {b['title']}  ({e})")
+    candidates = []
+
+    g = google_books_cover(b["title"], b["author"])
+    if g:
+        candidates.append(("Google Books", g[0], g[1]))
+    time.sleep(0.3)
+
+    o = open_library_cover(b["title"], b["author"])
+    if o:
+        candidates.append(("Open Library", o[0], o[1]))
+    time.sleep(0.3)
+
+    if not candidates:
+        print(f"MISS  #{b['n']:>2}  {b['title']}  (no cover found on either source)")
         misses.append(b["title"])
-    time.sleep(0.4)
+        continue
+
+    if HAVE_PIL:
+        candidates.sort(key=lambda c: area(c[2]), reverse=True)
+    source, img, size = candidates[0]
+
+    with open(dest, "wb") as f:
+        f.write(img)
+
+    dims = f"{size[0]}x{size[1]}" if size else "?"
+    print(f"OK    #{b['n']:>2}  {b['title']:<45} {dims:>10}  ({source})")
 
 print("\nDone. Covers saved to:", OUT_DIR)
 if misses:
