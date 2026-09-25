@@ -62,6 +62,14 @@ BOOKS = [
     {"n": 20, "title": "The Psychology of Money", "author": "Morgan Housel", "slug": "20-psychology-of-money"},
 ]
 
+# Manual overrides: when neither API turns up a good enough image for a
+# book, drop a direct image URL here (e.g. an Amazon product-image link)
+# keyed by slug. These are used as-is and skip the Google/Open Library
+# search entirely, so re-running the script won't undo a hand-picked cover.
+OVERRIDES = {
+    "01-subtle-art": "https://m.media-amazon.com/images/I/71QKQ9mwV7L.jpg",
+}
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT_DIR = os.path.join(HERE, "covers")
 os.makedirs(OUT_DIR, exist_ok=True)
@@ -177,6 +185,21 @@ misses = []
 
 for b in BOOKS:
     dest = os.path.join(OUT_DIR, f"{b['slug']}.jpg")
+
+    if b["slug"] in OVERRIDES:
+        try:
+            img = fetch(OVERRIDES[b["slug"]])
+            size = pixel_size(img)
+            with open(dest, "wb") as f:
+                f.write(img)
+            dims = f"{size[0]}x{size[1]}" if size else "?"
+            print(f"OK    #{b['n']:>2}  {b['title']:<45} {dims:>10}  (manual override)")
+        except Exception as e:
+            print(f"MISS  #{b['n']:>2}  {b['title']}  (override URL failed: {e})")
+            misses.append(b["title"])
+        time.sleep(0.3)
+        continue
+
     candidates = []
 
     gb_img, gb_size, gb_reason = google_books_cover(b["title"], b["author"])
