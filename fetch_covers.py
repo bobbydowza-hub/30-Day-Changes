@@ -18,13 +18,16 @@ don't have it:
     pip3 install pillow
 
 Safe to re-run -- it overwrites covers/ with whichever source wins
-each time.
+each time. Prints a short reason next to any book where Google Books
+didn't win, so it's obvious whether it lost fairly (Open Library just
+had the bigger image) or errored out (network/API issue worth flagging).
 """
 import io
 import json
 import os
 import re
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -63,7 +66,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUT_DIR = os.path.join(HERE, "covers")
 os.makedirs(OUT_DIR, exist_ok=True)
 
-UA = {"User-Agent": "30DayChanges-CoverFetcher/2.0 (personal project)"}
+UA = {"User-Agent": "30DayChanges-CoverFetcher/2.1 (personal project)"}
 
 
 def fetch(url, timeout=15):
@@ -85,32 +88,70 @@ def area(size):
     return size[0] * size[1] if size else 0
 
 
-def google_books_cover(title, author):
-    q = urllib.parse.urlencode({"q": f"intitle:{title} inauthor:{author}", "maxResults": 3})
+def google_books_search(query):
+    """One search attempt against Google Books. Returns (items, reason)."""
+    q = urllib.parse.urlencode({"q": query, "maxResults": 5})
     url = f"https://www.googleapis.com/books/v1/volumes?{q}"
     try:
-        data = json.loads(fetch(url))
+        raw = fetch(url)
+    except urllib.error.HTTPError as e:
+        return None, f"HTTP {e.code}"
+    except urllib.error.URLError as e:
+        return None, f"network error ({e.reason})"
+    except Exception as e:
+        return None, f"error ({e})"
+    try:
+        data = json.loads(raw)
     except Exception:
-        return None
-    for item in data.get("items", []):
-        links = item.get("volumeInfo", {}).get("imageLinks", {})
-        base = (links.get("extraLarge") or links.get("large") or links.get("medium")
-                or links.get("small") or links.get("thumbnail") or links.get("smallThumbnail"))
-        if not base:
+        return None, "bad JSON response"
+    return data.get("items", []) or [], None
+
+
+def google_books_cover(title, author):
+    """Returns (img_bytes, size, debug_reason). debug_reason is None on success."""
+    # First try a strict field-scoped search, then fall back to a plain one --
+    # some titles (accented authors, punctuation like "F*ck") don't match well
+    # with intitle:/inauthor: operators.
+    clean_title = re.sub(r"[^\w\s]", " ", title)
+    attempts = [
+        f"intitle:{title} inauthor:{author}",
+        f"{clean_title} {author}",
+    ]
+
+    last_reason = "no results"
+    for query in attempts:
+        items, reason = google_books_search(query)
+        if reason:
+            last_reason = reason
             continue
-        # Google's search results default to a small thumbnail, but bumping
-        # zoom and dropping the curl-page effect unlocks a much bigger image
-        big_url = re.sub(r"zoom=\d", "zoom=3", base)
-        big_url = big_url.replace("&edge=curl", "").replace("http://", "https://")
-        try:
-            img = fetch(big_url)
+        if not items:
+            last_reason = "no results"
+            continue
+
+        for item in items:
+            links = item.get("volumeInfo", {}).get("imageLinks", {})
+            base = (links.get("extraLarge") or links.get("large") or links.get("medium")
+                    or links.get("small") or links.get("thumbnail") or links.get("smallThumbnail"))
+            if not base:
+                continue
+            # Search results default to a small thumbnail, but bumping zoom
+            # and dropping the curl-page effect unlocks a much bigger image
+            big_url = re.sub(r"zoom=\d", "zoom=3", base)
+            big_url = big_url.replace("&edge=curl", "").replace("http://", "https://")
+            try:
+                img = fetch(big_url)
+            except Exception as e:
+                last_reason = f"image download failed ({e})"
+                continue
             size = pixel_size(img)
             if HAVE_PIL and area(size) <= 40 * 40:
-                continue  # corrupt/placeholder pixel, skip
-            return img, size
-        except Exception:
-            continue
-    return None
+                last_reason = "image too small/corrupt"
+                continue
+            return img, size, None
+
+        last_reason = "matched but no cover image listed"
+
+    return None, None, last_reason
 
 
 def open_library_cover(title, author):
@@ -138,9 +179,9 @@ for b in BOOKS:
     dest = os.path.join(OUT_DIR, f"{b['slug']}.jpg")
     candidates = []
 
-    g = google_books_cover(b["title"], b["author"])
-    if g:
-        candidates.append(("Google Books", g[0], g[1]))
+    gb_img, gb_size, gb_reason = google_books_cover(b["title"], b["author"])
+    if gb_img:
+        candidates.append(("Google Books", gb_img, gb_size))
     time.sleep(0.3)
 
     o = open_library_cover(b["title"], b["author"])
@@ -149,7 +190,7 @@ for b in BOOKS:
     time.sleep(0.3)
 
     if not candidates:
-        print(f"MISS  #{b['n']:>2}  {b['title']}  (no cover found on either source)")
+        print(f"MISS  #{b['n']:>2}  {b['title']}  (no cover found on either source; Google: {gb_reason})")
         misses.append(b["title"])
         continue
 
@@ -161,7 +202,8 @@ for b in BOOKS:
         f.write(img)
 
     dims = f"{size[0]}x{size[1]}" if size else "?"
-    print(f"OK    #{b['n']:>2}  {b['title']:<45} {dims:>10}  ({source})")
+    note = "" if source == "Google Books" or not gb_reason else f"  [Google: {gb_reason}]"
+    print(f"OK    #{b['n']:>2}  {b['title']:<45} {dims:>10}  ({source}){note}")
 
 print("\nDone. Covers saved to:", OUT_DIR)
 if misses:
